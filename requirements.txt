@@ -2,3 +2,4 @@ youtube_transcript_api
 textblob
 wordcloud
 seaborn
+sumy
