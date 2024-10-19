@@ -273,19 +273,7 @@ def get_summary_from_api(content):
         return f"Error in generating summary: {response.status_code}, {response.text}"
 
 # Function to fetch YouTube video statistics like view count
-def get_video_stats(video_id):
-    api_key = os.getenv('YOUTUBE_API_KEY')  # Ensure you have set the YouTube Data API key in your environment
-    if not api_key:
-        return "YouTube API key not found. Please set it in the environment."
-    
-    url = f"https://www.googleapis.com/youtube/v3/videos?part=statistics&id={video_id}&key={api_key}"
-    response = requests.get(url)
-    stats = response.json()
-    if 'items' in stats and stats['items']:
-        view_count = stats['items'][0]['statistics']['viewCount']
-        return view_count
-    else:
-        return "Stats not found"
+
 
 def enhance_content(content, level_of_understanding):
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -314,11 +302,6 @@ def enhance_content(content, level_of_understanding):
         return None
 
 # Comment Section Analysis
-def fetch_comments(video_url):
-    yt = YouTube(video_url)
-    print(yt)
-    comments = yt.comments  # Fetch comments
-    return comments
 
 def navigate_to_section(section):
     st.session_state.section = section
@@ -385,6 +368,7 @@ def main():
                     target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
                     if api_summary:
         # Perform translation
+                        print(api_summary)
                         translation = translator.translate(api_summary, dest=target_lang_code)
                         st.markdown("### Summary:")
                         st.markdown(translation)
