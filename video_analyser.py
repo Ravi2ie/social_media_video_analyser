@@ -371,6 +371,7 @@ def main():
                         print(api_summary)
                         translation = translator.translate(api_summary, dest=target_lang_code)
                         st.markdown("### Summary:")
+                        st.markdown(api_summary)
                         st.markdown(translation)
 
                     # Fetch video statistics
@@ -423,6 +424,7 @@ def main():
                         target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
                         translation = translator.translate(api_summary, dest=target_lang_code)
                         st.subheader("Enhanced Content:")
+                        st.write(enhanced_content)
                         st.write(translation)
                     else:
                         st.error("Failed to enhance content.")
