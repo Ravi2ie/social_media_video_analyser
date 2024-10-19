@@ -1,3 +1,143 @@
+# import os
+# import streamlit as st
+# from youtube_transcript_api import YouTubeTranscriptApi
+# from textblob import TextBlob
+# from wordcloud import WordCloud
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+# from collections import Counter
+# from sumy.parsers.plaintext import PlaintextParser
+# from sumy.nlp.tokenizers import Tokenizer
+# from sumy.summarizers.lsa import LsaSummarizer
+
+# # Function to extract transcript and language code
+# def get_transcript(youtube_url):
+#     video_id = youtube_url.split("v=")[-1]
+    
+#     try:
+#         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+
+#         # First, try to get a manually created transcript
+#         try:
+#             transcript = transcript_list.find_manually_created_transcript(['en'])
+#         except:
+#             # If no manually created transcript, try to find a generated one
+#             generated_transcripts = [trans for trans in transcript_list if trans.is_generated]
+#             if not generated_transcripts:
+#                 raise Exception("No suitable transcript found. Generated transcripts are also not available.")
+#             transcript = generated_transcripts[0]
+        
+#         # Extract the full transcript text
+#         full_transcript = " ".join([part['text'] for part in transcript.fetch()])
+#         language_code = transcript.language_code
+#         return full_transcript, language_code
+    
+#     except Exception as e:
+#         raise Exception(f"Transcript not found for the video. Error: {str(e)}")
+
+
+# # Sentiment Analysis on the transcript
+# def perform_sentiment_analysis(text):
+#     blob = TextBlob(text)
+#     sentiment_score = blob.sentiment.polarity  # -1 to 1 (negative to positive)
+#     return sentiment_score
+
+# # Keyword Extraction using frequency-based analysis
+# def extract_keywords(text, num_keywords=10):
+#     words = text.split()
+#     word_counts = Counter(words)
+#     common_words = word_counts.most_common(num_keywords)
+#     return common_words
+
+# # Generate Word Cloud
+# def generate_wordcloud(text):
+#     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+#     plt.figure(figsize=(10, 5))
+#     plt.imshow(wordcloud, interpolation='bilinear')
+#     plt.axis('off')
+#     st.pyplot(plt)
+
+# # Generate Bar Plot for Keywords
+# def plot_keywords(keywords):
+#     words, counts = zip(*keywords)
+#     sns.barplot(x=list(counts), y=list(words))
+#     plt.xlabel('Frequency')
+#     plt.ylabel('Keywords')
+#     plt.title('Top Keywords')
+#     st.pyplot(plt)
+
+# # Summarize the transcript using Sumy LSA Summarizer
+# def summarize_with_sumy(transcript):
+#     parser = PlaintextParser.from_string(transcript, Tokenizer("english"))
+#     summarizer = LsaSummarizer()
+#     summary = summarizer(parser.document, 5)  # 5 sentences in the summary
+
+#     return "\n".join([str(sentence) for sentence in summary])
+
+# # Calculate the content score based on sentiment and keywords
+# def calculate_content_score(sentiment_score, keywords):
+#     keyword_density = sum([count for _, count in keywords]) / len(keywords)
+#     score = (sentiment_score + 1) * 50 + keyword_density * 10  # Adjust weightings as needed
+    
+#     return max(0, round(score)) # Clamp score between 0 and 100
+
+# # Main Streamlit App
+# def main():
+#     st.title('📹 YouTube Video Content Analyzer & Summarizer')
+#     link = st.text_input('Enter the YouTube video URL:')
+
+#     if st.button('Analyze Video'):
+#         if link:
+#             try:
+#                 progress = st.progress(0)
+#                 status_text = st.empty()
+
+#                 status_text.text('Fetching the transcript...')
+#                 progress.progress(25)
+
+#                 # Extract transcript and language code
+#                 transcript, language_code = get_transcript(link)
+
+#                 # Perform sentiment analysis
+#                 sentiment_score = perform_sentiment_analysis(transcript)
+#                 st.write(f"Sentiment Score: {sentiment_score:.2f} (Range: -1 to 1)")
+
+#                 # Extract keywords
+#                 keywords = extract_keywords(transcript)
+#                 st.write("*Top Keywords:*")
+#                 st.write(keywords)
+
+#                 # Visualize Word Cloud and Keyword Bar Plot
+#                 st.write("### Word Cloud")
+#                 generate_wordcloud(transcript)
+
+#                 st.write("### Keyword Frequency Plot")
+#                 plot_keywords(keywords)
+
+#                 progress.progress(75)
+#                 status_text.text('Generating summary...')
+
+#                 # Generate summary using Sumy
+#                 summary = summarize_with_sumy(transcript)
+#                 st.markdown("### Summary:")
+#                 st.markdown(summary)
+
+#                 # Calculate content score
+#                 content_score = calculate_content_score(sentiment_score, keywords)
+#                 st.write(f"### Content Score: {content_score}/100")
+#                 st.progress(content_score)
+
+#                 status_text.text('Analysis Complete.')
+#                 progress.progress(100)
+
+#             except Exception as e:
+#                 print(f"Error: {str(e)}")
+#         else:
+#             st.warning('Please enter a valid YouTube link.')
+
+# if __name__ == "__main__":
+#     main()
+
 import re
 import os
 import streamlit as st
@@ -10,120 +150,6 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
-from googletrans import Translator
-
-translator = Translator()
-
-# Language codes and their corresponding names
-LANGUAGES = {
-    'af': 'afrikaans',
-    'sq': 'albanian',
-    'am': 'amharic',
-    'ar': 'arabic',
-    'hy': 'armenian',
-    'az': 'azerbaijani',
-    'eu': 'basque',
-    'be': 'belarusian',
-    'bn': 'bengali',
-    'bs': 'bosnian',
-    'bg': 'bulgarian',
-    'ca': 'catalan',
-    'ceb': 'cebuano',
-    'ny': 'chichewa',
-    'zh-cn': 'chinese (simplified)',
-    'zh-tw': 'chinese (traditional)',
-    'co': 'corsican',
-    'hr': 'croatian',
-    'cs': 'czech',
-    'da': 'danish',
-    'nl': 'dutch',
-    'en': 'english',
-    'eo': 'esperanto',
-    'et': 'estonian',
-    'tl': 'filipino',
-    'fi': 'finnish',
-    'fr': 'french',
-    'fy': 'frisian',
-    'gl': 'galician',
-    'ka': 'georgian',
-    'de': 'german',
-    'el': 'greek',
-    'gu': 'gujarati',
-    'ht': 'haitian creole',
-    'ha': 'hausa',
-    'haw': 'hawaiian',
-    'iw': 'hebrew',
-    'he': 'hebrew',
-    'hi': 'hindi',
-    'hmn': 'hmong',
-    'hu': 'hungarian',
-    'is': 'icelandic',
-    'ig': 'igbo',
-    'id': 'indonesian',
-    'ga': 'irish',
-    'it': 'italian',
-    'ja': 'japanese',
-    'jw': 'javanese',
-    'kn': 'kannada',
-    'kk': 'kazakh',
-    'km': 'khmer',
-    'ko': 'korean',
-    'ku': 'kurdish (kurmanji)',
-    'ky': 'kyrgyz',
-    'lo': 'lao',
-    'la': 'latin',
-    'lv': 'latvian',
-    'lt': 'lithuanian',
-    'lb': 'luxembourgish',
-    'mk': 'macedonian',
-    'mg': 'malagasy',
-    'ms': 'malay',
-    'ml': 'malayalam',
-    'mt': 'maltese',
-    'mi': 'maori',
-    'mr': 'marathi',
-    'mn': 'mongolian',
-    'my': 'myanmar (burmese)',
-    'ne': 'nepali',
-    'no': 'norwegian',
-    'or': 'odia',
-    'ps': 'pashto',
-    'fa': 'persian',
-    'pl': 'polish',
-    'pt': 'portuguese',
-    'pa': 'punjabi',
-    'ro': 'romanian',
-    'ru': 'russian',
-    'sm': 'samoan',
-    'gd': 'scots gaelic',
-    'sr': 'serbian',
-    'st': 'sesotho',
-    'sn': 'shona',
-    'sd': 'sindhi',
-    'si': 'sinhala',
-    'sk': 'slovak',
-    'sl': 'slovenian',
-    'so': 'somali',
-    'es': 'spanish',
-    'su': 'sundanese',
-    'sw': 'swahili',
-    'sv': 'swedish',
-    'tg': 'tajik',
-    'ta': 'tamil',
-    'te': 'telugu',
-    'th': 'thai',
-    'tr': 'turkish',
-    'uk': 'ukrainian',
-    'ur': 'urdu',
-    'ug': 'uyghur',
-    'uz': 'uzbek',
-    'vi': 'vietnamese',
-    'cy': 'welsh',
-    'xh': 'xhosa',
-    'yi': 'yiddish',
-    'yo': 'yoruba',
-    'zu': 'zulu',
-}
 
 # For summary
 from sumy.parsers.plaintext import PlaintextParser
@@ -273,7 +299,19 @@ def get_summary_from_api(content):
         return f"Error in generating summary: {response.status_code}, {response.text}"
 
 # Function to fetch YouTube video statistics like view count
-
+def get_video_stats(video_id):
+    api_key = os.getenv('YOUTUBE_API_KEY')  # Ensure you have set the YouTube Data API key in your environment
+    if not api_key:
+        return "YouTube API key not found. Please set it in the environment."
+    
+    url = f"https://www.googleapis.com/youtube/v3/videos?part=statistics&id={video_id}&key={api_key}"
+    response = requests.get(url)
+    stats = response.json()
+    if 'items' in stats and stats['items']:
+        view_count = stats['items'][0]['statistics']['viewCount']
+        return view_count
+    else:
+        return "Stats not found"
 
 def enhance_content(content, level_of_understanding):
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -302,6 +340,11 @@ def enhance_content(content, level_of_understanding):
         return None
 
 # Comment Section Analysis
+def fetch_comments(video_url):
+    yt = YouTube(video_url)
+    print(yt)
+    comments = yt.comments  # Fetch comments
+    return comments
 
 def navigate_to_section(section):
     st.session_state.section = section
@@ -323,7 +366,6 @@ def main():
     if st.session_state.section == "analyzer":
         st.title('📹 YouTube Video Content Analyzer & Summarizer')
         link = st.text_input('Enter the YouTube video URL:')
-        target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
 
         
         if st.button('Analyze Video'):
@@ -364,15 +406,8 @@ def main():
 
                     # Generate summary using OpenRouter API
                     api_summary = get_summary_from_api(transcript)
-                    
-                    target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
-                    if api_summary:
-        # Perform translation
-                        print(api_summary)
-                        translation = translator.translate(api_summary, dest=target_lang_code)
-                        st.markdown("### Summary:")
-                        st.markdown(api_summary)
-                        st.markdown(translation)
+                    st.markdown("### AI Summary:")
+                    st.markdown(api_summary)
 
                     # Fetch video statistics
                     # video_id = link.split("v=")[-1]
@@ -406,7 +441,6 @@ def main():
     elif st.session_state.section == "enhancement":
         st.title("Content Enhancement")
         link = st.text_input('Enter the YouTube video URL:')
-        target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
         # Dropdown for selecting the level of understanding
         level = st.selectbox(
             "Select the level of understanding:",
@@ -420,12 +454,8 @@ def main():
                     # Enhance the content based on the selected level
                     enhanced_content = enhance_content(content, level)
                     if enhanced_content:
-                        
-                        target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
-                        translation = translator.translate(api_summary, dest=target_lang_code)
                         st.subheader("Enhanced Content:")
                         st.write(enhanced_content)
-                        st.write(translation)
                     else:
                         st.error("Failed to enhance content.")
                 else:
@@ -434,7 +464,6 @@ def main():
     elif st.session_state.section == "wordcloud":
         st.title("Generate wordcloud")
         link = st.text_input('Enter the YouTube video URL:')
-        
         if st.button('Show Wordcloud'):
             if link:
                 transcript, language_code = get_transcript(link)
