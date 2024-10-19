@@ -4,3 +4,4 @@ wordcloud
 seaborn
 sumy
 pytube
+googletrans
