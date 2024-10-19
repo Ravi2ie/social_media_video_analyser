@@ -340,6 +340,7 @@ def main():
     if st.session_state.section == "analyzer":
         st.title('📹 YouTube Video Content Analyzer & Summarizer')
         link = st.text_input('Enter the YouTube video URL:')
+        target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
 
         
         if st.button('Analyze Video'):
@@ -380,7 +381,7 @@ def main():
 
                     # Generate summary using OpenRouter API
                     api_summary = get_summary_from_api(transcript)
-                    target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
+                    
                     target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
                     if api_summary:
         # Perform translation
@@ -420,6 +421,7 @@ def main():
     elif st.session_state.section == "enhancement":
         st.title("Content Enhancement")
         link = st.text_input('Enter the YouTube video URL:')
+        target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
         # Dropdown for selecting the level of understanding
         level = st.selectbox(
             "Select the level of understanding:",
@@ -433,7 +435,7 @@ def main():
                     # Enhance the content based on the selected level
                     enhanced_content = enhance_content(content, level)
                     if enhanced_content:
-                        target_language = st.selectbox("Select target language:", list(LANGUAGES.values()))
+                        
                         target_lang_code = [code for code, name in LANGUAGES.items() if name == target_language][0]
                         translation = translator.translate(api_summary, dest=target_lang_code)
                         st.subheader("Enhanced Content:")
@@ -446,6 +448,7 @@ def main():
     elif st.session_state.section == "wordcloud":
         st.title("Generate wordcloud")
         link = st.text_input('Enter the YouTube video URL:')
+        
         if st.button('Show Wordcloud'):
             if link:
                 transcript, language_code = get_transcript(link)
