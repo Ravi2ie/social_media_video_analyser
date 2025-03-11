@@ -253,7 +253,7 @@ def get_content_analysis(content):
             {
                 "role": "user",
                 "content": f"Analyze the following content and provide a content analysis score based on the following parameters:\n"
-                           f"Resource link: Give me the tops resources to refer this\n"
+                           f"- Resource link: Give me the tops resources to refer this\n"
                            f"- Clarity: Score out of 25 for how clear the content is.\n"
                            f"- Structure: Score out of 25 for how well the content is structured.\n"
                            f"- Relevance: Score out of 25 for how relevant the content is.\n"
@@ -278,7 +278,7 @@ def get_content_analysis(content):
 def get_summary_from_api(content):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer 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",  # Replace with your actual API key
+        "Authorization": f"Bearer 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",  # Replace with your actual API key
         "Content-Type": "application/json"
     }
     
