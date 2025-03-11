@@ -243,7 +243,7 @@ def summarize_with_sumy(transcript):
 def get_content_analysis(content):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # Replace with actual API key
+        "Authorization": "Bearer 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",  # Replace with actual API key
         "Content-Type": "application/json"
     }
 
@@ -278,7 +278,7 @@ def get_content_analysis(content):
 def get_summary_from_api(content):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer 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",  # Replace with your actual API key
+        "Authorization": f"Bearer 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",  # Replace with your actual API key
         "Content-Type": "application/json"
     }
     
@@ -317,7 +317,7 @@ def get_video_stats(video_id):
 def enhance_content(content, level_of_understanding):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # Replace with actual API key
+        "Authorization": "Bearer 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",  # Replace with actual API key
         "Content-Type": "application/json"
     }
 
