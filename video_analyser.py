@@ -253,6 +253,7 @@ def get_content_analysis(content):
             {
                 "role": "user",
                 "content": f"Analyze the following content and provide a content analysis score based on the following parameters:\n"
+                           f"- Resource Links: Give the tops resources related to this given content.\n"
                            f"- Clarity: Score out of 25 for how clear the content is.\n"
                            f"- Structure: Score out of 25 for how well the content is structured.\n"
                            f"- Relevance: Score out of 25 for how relevant the content is.\n"
