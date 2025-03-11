@@ -317,7 +317,7 @@ def get_video_stats(video_id):
 def enhance_content(content, level_of_understanding):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # Replace with actual API key
+        "Authorization": "Bearer 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",  # Replace with actual API key
         "Content-Type": "application/json"
     }
 
