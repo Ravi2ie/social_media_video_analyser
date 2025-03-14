@@ -4,12 +4,13 @@ import streamlit as st
 import requests
 import json
 from pytube import YouTube
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi,TranscriptsDisabled
 from textblob import TextBlob
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
+import random
 
 # For summary
 from sumy.parsers.plaintext import PlaintextParser
@@ -33,23 +34,76 @@ def calculate_content_analysis_score(sentiment_score, keywords):
     content_score = (0.6 * normalized_sentiment) + (0.4 * keyword_score)
     
     return content_score
+# proxies = [
+#     "http://45.249.50.137:4153",
+#     # "http://98.76.54.32:8080",
+#     # "http://192.168.1.100:3128",
+#  ]
+
+def extract_video_id(url):
+    """Extracts video ID from various YouTube URL formats using regex"""
+    patterns = [
+        r"youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)",  # Standard YouTube URL
+        r"youtu\.be\/([a-zA-Z0-9_-]+)"              # Shortened YouTube URL
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
 
 def get_transcript(youtube_url):
-    video_id = youtube_url.split("v=")[-1]
+    video_id = extract_video_id(youtube_url)
+
+    if not video_id:
+        st.warning("⚠️ Invalid YouTube URL. Please enter a correct URL.")
+        return None, None  # Ensure proper return type
+
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        try:
-            transcript = transcript_list.find_manually_created_transcript(['en'])
-        except:
-            generated_transcripts = [trans for trans in transcript_list if trans.is_generated]
-            if not generated_transcripts:
-                raise Exception("No suitable transcript found. Generated transcripts are also not available.")
-            transcript = generated_transcripts[0]
-        full_transcript = " ".join([part['text'] for part in transcript.fetch()])
-        language_code = transcript.language_code
-        return full_transcript, language_code
+        available_languages = {t.language: t.language_code for t in transcript_list}
+
+        if not available_languages:
+            st.warning("⚠️ No available transcripts for this video.")
+            return None, None
+
+        selected_language = list(available_languages.keys())[0]  # Auto-select first available language
+        st.session_state["language_code"] = available_languages[selected_language]
+
+        st.success(f"✅ Video is in `{selected_language}`.")
+
+    except TranscriptsDisabled:
+        st.error("❌ Transcripts are disabled for this video.")
+        return None, None
     except Exception as e:
-        raise Exception(f"Transcript not found for the video. Error: {str(e)}")
+        st.error(f"⚠️ Error fetching transcript list: {str(e)}")
+        return None, None
+
+    # Fetch transcript in the selected language
+    try:
+        lang_code = st.session_state["language_code"]
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang_code])
+        transcript_text = "\n".join([part["text"] for part in transcript])
+
+        return transcript_text, lang_code
+
+    except Exception as e:
+        st.error(f"⚠️ Error fetching transcript: {str(e)}")
+        return None, None
+    # try:
+    #     transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxy)
+    #     try:
+    #         transcript = transcript_list.find_manually_created_transcript(['en'])
+    #     except:
+    #         generated_transcripts = [trans for trans in transcript_list if trans.is_generated]
+    #         if not generated_transcripts:
+    #             raise Exception("No suitable transcript found. Generated transcripts are also not available.")
+    #         transcript = generated_transcripts[0]
+    #     full_transcript = " ".join([part['text'] for part in transcript.fetch()])
+    #     language_code = transcript.language_code
+    #     return full_transcript, language_code
+    # except Exception as e:
+    #     raise Exception(f"Transcript not found for the video. Error: {str(e)}")
 
 # Sentiment Analysis on the transcript
 def perform_sentiment_analysis(text):
@@ -103,12 +157,12 @@ def summarize_with_sumy(transcript):
 def get_content_analysis(content):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # Replace with actual API key
+        "Authorization": "Bearer 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",  # Replace with actual API key
         "Content-Type": "application/json"
     }
 
     data = {
-        "model": "google/gemini-2.0-flash-thinking-exp:free:online",
+        "model": "google/gemini-2.0-flash-thinking-exp:free",
         "messages": [
             {
                 "role": "user",
@@ -137,12 +191,12 @@ def get_content_analysis(content):
 def get_summary_from_api(content):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer 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",  # Replace with your actual API key
+        "Authorization": f"Bearer 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",  # Replace with your actual API key
         "Content-Type": "application/json"
     }
     
     data = {
-        "model": "google/gemini-2.0-flash-thinking-exp:free:online", #meta-llama/llama-3.2-3b-instruct:free
+        "model": "google/gemini-2.0-flash-thinking-exp:free", #meta-llama/llama-3.2-3b-instruct:free
         "messages": [
             {
                 "role": "user",
@@ -176,13 +230,13 @@ def get_video_stats(video_id):
 def enhance_content(content, level_of_understanding):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",  # Replace with actual API key
+        "Authorization": "Bearer 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",  # Replace with actual API key
         "Content-Type": "application/json"
     }
 
     # API request data with selected level of understanding
     data = {
-        "model": "google/gemini-2.0-flash-thinking-exp:free:online",
+        "model": "google/gemini-2.0-flash-thinking-exp:free",
         "messages": [
             {
                 "role": "user",
@@ -210,7 +264,7 @@ def navigate_to_section(section):
     st.session_state.section = section
 # Main Streamlit App
 def main():
-
+    
     if "section" not in st.session_state:
         st.session_state.section = "analyzer"
 
@@ -222,15 +276,21 @@ def main():
             navigate_to_section("enhancement")
         if st.button("Generate Wordcloud"):
             navigate_to_section("wordcloud")
+        
 
     if st.session_state.section == "analyzer":
-        st.title('📹 YouTube Video Content Analyzer & Summarizer')
-        link = st.text_input('Enter the YouTube video URL:')
-
+        st.title('🎬YouTube Video Content Analyzer & Summarizer')
+        link = st.text_input('Enter the YouTube video URL:',placeholder="https://www.youtube.com/watch?v=VIDEO_ID")
+        user_query=st.text_input("Enter the query you want to search in the video:(optional)")
         
-        if st.button('Analyze Video'):
+        value_yt=st.button("Analyze Video")
+        if link:
+            with st.expander("🎬Video you want to analyze", expanded=True):
+                        st.video(link)
+        if value_yt:
             if link:
                 try:
+                    
                     progress = st.progress(0)
                     status_text = st.empty()
                     
@@ -259,7 +319,7 @@ def main():
                     status_text.text('Generating summary...📝✨')
                     progress.progress(75)
 
-                    api_summary = get_summary_from_api(transcript)
+                    api_summary = get_summary_from_api("1)give the youtube video title of this video,and theme of the video in 1 paragraph: 'mention as title : ,theme: "+link+"2)must thing(high priority):"+user_query+"3)"+transcript)
                     
                     # Display AI Summary in an Expander (Auto-expanded)
                     with st.expander("### AI Summary", expanded=True):
@@ -286,19 +346,24 @@ def main():
 
     elif st.session_state.section == "enhancement":
         st.title("Content Enhancement")
-        link = st.text_input('Enter the YouTube video URL:')
+        link = st.text_input('Enter the YouTube video URL:',placeholder="https://www.youtube.com/watch?v=VIDEO_ID")
         # Dropdown for selecting the level of understanding
+        user_query_enhancement=st.text_input("Customize here (optional) : ")
         level = st.selectbox(
             "Select the level of understanding:",
             ("5-year-old children (Pre-school)", "Mid school", "High school", "College (Undergraduate)")
         )
-        
-        if st.button("Enhance it"):
+        value=st.button("Enhance it")
+        if link:
+            with st.expander("🎬Video you want to analyze", expanded=True):
+                        st.video(link)
+        if value:
             if link:
+                
                 content, language_code = get_transcript(link)
                 if content:
                     with st.status("Enhancing content... Please wait!", expanded=True) as status:
-                        enhanced_content = enhance_content(content, level)
+                        enhanced_content = enhance_content("1)give the youtube video title of this video,and theme of the video in 1 paragraph: 'mention as title : ,theme: "+link+"2)must thing(high priority):"+user_query_enhancement+content, level)
 
                     if enhanced_content:
                         status.update(label="Enhancement completed!", state="complete", expanded=False)
@@ -314,8 +379,12 @@ def main():
 
     elif st.session_state.section == "wordcloud":
         st.title("Generate wordcloud")
-        link = st.text_input('Enter the YouTube video URL:')
-        if st.button('Show Wordcloud'):
+        link = st.text_input('Enter the YouTube video URL:',placeholder="https://www.youtube.com/watch?v=VIDEO_ID")
+        value_wordcloud=st.button("Get Wordcloud")
+        if link:
+            with st.expander("🎬Video you want to analyze", expanded=True):
+                    st.video(link)
+        if value_wordcloud:
             if link:
                 transcript, language_code = get_transcript(link)
                 st.write("### Word Cloud")
