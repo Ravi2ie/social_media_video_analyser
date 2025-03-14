@@ -60,7 +60,8 @@ def get_transcript(youtube_url):
         return None, None  # Ensure proper return type
 
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id,proxy="http://45.249.50.137:4153")
+        proxy = {"http": random.choice(proxies), "https": random.choice(proxies)}
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id,proxies=proxy)
         available_languages = {t.language: t.language_code for t in transcript_list}
 
         if not available_languages:
