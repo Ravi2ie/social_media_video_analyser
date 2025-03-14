@@ -34,11 +34,11 @@ def calculate_content_analysis_score(sentiment_score, keywords):
     content_score = (0.6 * normalized_sentiment) + (0.4 * keyword_score)
     
     return content_score
-proxies = [
-    "http://45.249.50.137:4153",
-    # "http://98.76.54.32:8080",
-    # "http://192.168.1.100:3128",
- ]
+# proxies = [
+#     "http://45.249.50.137:4153",
+#     # "http://98.76.54.32:8080",
+#     # "http://192.168.1.100:3128",
+#  ]
 
 def extract_video_id(url):
     """Extracts video ID from various YouTube URL formats using regex"""
@@ -60,8 +60,8 @@ def get_transcript(youtube_url):
         return None, None  # Ensure proper return type
 
     try:
-        proxy = {"http": random.choice(proxies), "https": random.choice(proxies)}
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id,proxies=proxy)
+        #proxy = {"http": random.choice(proxies), "https": random.choice(proxies)}
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         available_languages = {t.language: t.language_code for t in transcript_list}
 
         if not available_languages:
